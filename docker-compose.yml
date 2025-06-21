@@ -1,0 +1,51 @@
+services:
+  php:
+    build:
+      context: ./php
+    ports:
+      - "8080:80"
+    volumes:
+      - ./php/src:/var/www/html
+      - /var/www/html/vendor
+      - ./logs/apache:/var/log/apache2
+      - ./apache/vhost.conf:/etc/apache2/sites-available/000-default.conf
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+
+  elasticsearch:
+    image: elasticsearch:7.17.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+
+  logstash:
+    build:
+      context: ./logstash
+    environment:
+      - APACHE_HOSTNAME=php
+    volumes:
+      - ./logs/apache:/var/log/apache
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+      - rabbitmq
+
+  kibana:
+    image: kibana:7.17.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
