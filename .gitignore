@@ -1,0 +1,5 @@
+# Docker data and logs
+logs/
+data/
+# PHP dependencies
+/php/src/vendor/ 
